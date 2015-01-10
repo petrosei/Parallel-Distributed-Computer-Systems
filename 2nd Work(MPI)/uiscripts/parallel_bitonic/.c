@@ -14,7 +14,7 @@ double seq_time,sumseq_time,average_seq_time;
 int j;
 
 int N;          // data array size
-int *a,*b,*c;         // data array to be sorted( b ,c for testing purposes)
+int *a,*b;         // data array to be sorted( b for testing purposes)
 int taskid,numtasks;
 int CHUNK;        //chunk  will break the data MPI_Isends
 //Initializes with marix a with N random numbers
@@ -59,10 +59,9 @@ int main(int argc, char **argv) {
   //Initialize the matrices for each task
   a = (int *) malloc(N* sizeof(int));
   b = (int *) malloc(( 3* sizeof(int));
-  c=(int *) malloc(( 3* sizeof(int));
+  c=(int *) malloc(( 3*(numtasks-1)* sizeof(int));
   MPI_Barrier(MPI_COMM_WORLD);
-  int t;
-  for(t=0;t<ITERATION_NUM;t++){
+  for(j=0;j<ITERATION_NUM;j++){
     srand(taskid);
     init();
     
@@ -123,26 +122,23 @@ int main(int argc, char **argv) {
 
     //printf("Imperative wall clock time = %f\n", seq_time);
     sumseq_time+=seq_time;
-    if(t==ITERATION_NUM-1){
+    if(j==ITERATION_NUM-1){
       average_seq_time = sumseq_time/ITERATION_NUM;
       printf(" %d\n %d\n %f\n",numtasks,q,average_seq_time);
     }
     
      int i;
-     int sum=0,pass=1;
-     int prev, next;
-     prev = a[N-1];
+     int sum,pass=1;
      sum=test();
      for(i=1;i<numtasks;i++){
         
-        MPI_Recv(c, 3, MPI_INT,i, FROM_WORKER,MPI_COMM_WORLD, &status);
-        sum=sum+c[0];
-        next = c[1];
-        if (prev>next) pass=0;
-        prev=c[2];
+        MPI_Recv(&c[3*i], 3, MPI_INT,i, FROM_WORKER,MPI_COMM_WORLD, &status);
+        sum=c[3*i];
+        if (i==0) pass &= (a[N-1] <= c[3*i+1]);
+        else pass &= (c[3*(i-1)+2] <= a[3*i+1]);
      }
-         if(sum==numtasks && pass) printf("TEST PASSed \n");
-         else printf("TEST FAILed \n");
+     if(sum==numtasks && pass) printf("TEST PASSed \n");
+     else printf("TEST FAILed \n");
     }
     else{
       b[0]=test();
