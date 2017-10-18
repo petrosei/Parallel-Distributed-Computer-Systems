@@ -44,13 +44,14 @@ const int DESCENDING = 0;
 
 void init(void);
 void print(void);
-void sort(void);
+//void sort(void);
 void test(void);
-void exchange(int i, int j);
-void compare(int i, int j, int dir);
-void bitonicMerge(int lo, int cnt, int dir);
-void recBitonicSort(int lo, int cnt, int dir);
-void impBitonicSort(void);
+int cmpfunc (const void * b, const void * c);
+//void exchange(int i, int j);
+//void compare(int i, int j, int dir);
+//void bitonicMerge(int lo, int cnt, int dir);
+//void recBitonicSort(int lo, int cnt, int dir);
+//void impBitonicSort(void);
 
 
 /** the main program **/ 
@@ -65,10 +66,10 @@ int main(int argc, char **argv) {
   N = 1<<atoi(argv[1]);
   a = (int *) malloc(N * sizeof(int));
   
-  init();
+/**  init();
 
   gettimeofday (&startwtime, NULL);
-  impBitonicSort();
+//  impBitonicSort();
   gettimeofday (&endwtime, NULL);
 
   seq_time = (double)((endwtime.tv_usec - startwtime.tv_usec)/1.0e6
@@ -77,10 +78,10 @@ int main(int argc, char **argv) {
   printf("Imperative wall clock time = %f\n", seq_time);
 
   test();
-
+**/
   init();
   gettimeofday (&startwtime, NULL);
-  sort();
+  qsort(a,N,sizeof(int),cmpfunc);
   gettimeofday (&endwtime, NULL);
 
   seq_time = (double)((endwtime.tv_usec - startwtime.tv_usec)/1.0e6
@@ -123,16 +124,19 @@ void print() {
   }
   printf("\n");
 }
-
+int cmpfunc (const void * b, const void * c) {
+   return ( *(int*)b - *(int*)c );
+}
 
 /** INLINE procedure exchange() : pair swap **/
+/**
 inline void exchange(int i, int j) {
   int t;
   t = a[i];
   a[i] = a[j];
   a[j] = t;
 }
-
+**/
 
 
 /** procedure compare() 
@@ -140,11 +144,12 @@ inline void exchange(int i, int j) {
    or DESCENDING; if (a[i] > a[j]) agrees with the direction, 
    then a[i] and a[j] are interchanged.
 **/
+/**
 inline void compare(int i, int j, int dir) {
   if (dir==(a[i]>a[j])) 
     exchange(i,j);
 }
-
+**/
 
 
 
@@ -154,6 +159,7 @@ inline void compare(int i, int j, int dir) {
    The sequence to be sorted starts at index position lo,
    the parameter cbt is the number of elements to be sorted. 
  **/
+/**
 void bitonicMerge(int lo, int cnt, int dir) {
   if (cnt>1) {
     int k=cnt/2;
@@ -164,7 +170,7 @@ void bitonicMerge(int lo, int cnt, int dir) {
     bitonicMerge(lo+k, k, dir);
   }
 }
-
+**/
 
 
 /** function recBitonicSort() 
@@ -172,6 +178,7 @@ void bitonicMerge(int lo, int cnt, int dir) {
     its two halves in opposite sorting orders, and then
     calls bitonicMerge to make them in the same order 
  **/
+/**
 void recBitonicSort(int lo, int cnt, int dir) {
   if (cnt>1) {
     int k=cnt/2;
@@ -180,21 +187,23 @@ void recBitonicSort(int lo, int cnt, int dir) {
     bitonicMerge(lo, cnt, dir);
   }
 }
-
+**/
 
 /** function sort() 
    Caller of recBitonicSort for sorting the entire array of length N 
    in ASCENDING order
  **/
+/**
 void sort() {
-  recBitonicSort(0, N, ASCENDING);
+  qsort(a,N,);
 }
-
+**/
 
 
 /*
   imperative version of bitonic sort
 */
+/**
 void impBitonicSort() {
 
   int i,j,k;
@@ -213,4 +222,4 @@ void impBitonicSort() {
     }
   }
 }
-
+**/
