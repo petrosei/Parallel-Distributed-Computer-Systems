@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
   seq_time = (double)((endwtime.tv_usec - startwtime.tv_usec)/1.0e6
 		      + endwtime.tv_sec - startwtime.tv_sec);
 
-  printf("Recursive wall clock time = %f\n", seq_time);
+  printf("Wall clock time = %f\n", seq_time);
 
   test();
 

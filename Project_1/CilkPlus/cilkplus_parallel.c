@@ -36,6 +36,7 @@ double seq_time;
 
 
 int N;          // data array size
+int NT;		// number of Threads
 int *a;         // data array to be sorted
 
 const int ASCENDING  = 1;
@@ -46,7 +47,7 @@ void init(void);
 void print(void);
 void sort(void);
 void test(void);
-inline void exchange(int i, int j);
+void exchange(int i, int j);
 void compare(int i, int j, int dir);
 void bitonicMerge(int lo, int cnt, int dir);
 void recBitonicSort(int lo, int cnt, int dir);
@@ -56,13 +57,14 @@ void impBitonicSort(void);
 /** the main program **/ 
 int main(int argc, char **argv) {
 
-  if (argc != 2) {
+  if (argc != 3) {
     printf("Usage: %s q\n  where n=2^q is problem size (power of two)\n", 
 	   argv[0]);
     exit(1);
   }
 
   N = 1<<atoi(argv[1]);
+  NT = atoi(argv[2]);
   a = (int *) malloc(N * sizeof(int));
   
   init();
