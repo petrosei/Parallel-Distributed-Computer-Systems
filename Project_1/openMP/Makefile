@@ -1,11 +1,10 @@
 
 CC = gcc
-CFLAGS = 
+CFLAGS = -fopenmp
 CNAME = openMP_parallel.c
 EXECNAME = openMP_parallel
-
-qsort_serial:
-	$(CC) -o $(EXECNAME) $(CNAME)
+openMP_parallel:
+	$(CC) -o $(EXECNAME) $(CNAME) $(CFLAGS)
 
 clean:
 	rm $(EXECNAME)

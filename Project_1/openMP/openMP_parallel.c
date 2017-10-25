@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <omp.h>
 
 struct timeval startwtime, endwtime;
 double seq_time;
@@ -38,6 +39,7 @@ double seq_time;
 int N;          // data array size
 int NT;		// number of Threads
 int *a;         // data array to be sorted
+int chunk;	// chunk in parallel region
 
 const int ASCENDING  = 1;
 const int DESCENDING = 0;
@@ -50,12 +52,15 @@ void test(void);
 void exchange(int i, int j);
 void compare(int i, int j, int dir);
 void bitonicMerge(int lo, int cnt, int dir);
+void recbitonicMerge(int lo, int cnt, int dir);
 void recBitonicSort(int lo, int cnt, int dir);
 void impBitonicSort(void);
 
 
 /** the main program **/ 
 int main(int argc, char **argv) {
+
+int tid,nthreads;
 
   if (argc != 3) {
     printf("Usage: %s q\n  where n=2^q is problem size (power of two)\n", 
@@ -66,7 +71,9 @@ int main(int argc, char **argv) {
   N = 1<<atoi(argv[1]);
   NT = atoi(argv[2]);
   a = (int *) malloc(N * sizeof(int));
-  
+
+  chunk = (N/NT)/2;  
+
   init();
 
   gettimeofday (&startwtime, NULL);
@@ -92,6 +99,16 @@ int main(int argc, char **argv) {
 
   test();
 
+ #pragma omp parallel num_threads(NT)  private(tid)
+{
+  tid = omp_get_thread_num();
+  //printf("Thread id = %d\n", tid);
+  if (tid == 0) 
+  {
+    nthreads = omp_get_num_threads();
+    printf("Number of threads = %d\n", nthreads);
+  }
+}
   // print();
 }
 
@@ -145,6 +162,9 @@ inline void exchange(int i, int j) {
 inline void compare(int i, int j, int dir) {
   if (dir==(a[i]>a[j])) 
     exchange(i,j);
+
+
+
 }
 
 
@@ -160,12 +180,56 @@ void bitonicMerge(int lo, int cnt, int dir) {
   if (cnt>1) {
     int k=cnt/2;
     int i;
+    int ans;
+    int tid;
+#pragma omp parallel num_threads(NT) shared(a)   private(i,tid)
+{
+    
+    tid = omp_get_thread_num();
+  //printf("Thread id = %d\n", tid);
+  if (tid == 0)
+  {
+    int nthreads = omp_get_num_threads();
+    //printf("Number of threads = %d\n", nthreads);
+  }
+   
+    #pragma omp for schedule(dynamic,cnt)  
     for (i=lo; i<lo+k; i++)
       compare(i, i+k, dir);
-    bitonicMerge(lo, k, dir);
-    bitonicMerge(lo+k, k, dir);
-  }
 }
+
+	
+    	bitonicMerge(lo, k, dir);
+	
+    	bitonicMerge(lo+k, k, dir);
+	
+
+	
+ }
+}
+
+/** Procedure recbitonicMerge() 
+   It recursively sorts a bitonic sequence in ascending order, 
+   if dir = ASCENDING, and in descending order otherwise. 
+   The sequence to be sorted starts at index position lo,
+   the parameter cbt is the number of elements to be sorted. 
+ **/
+void recbitonicMerge(int lo, int cnt, int dir) {
+  if (cnt>1) {
+    int k=cnt/2;
+    int i;
+    int ans;
+
+    for (i=lo; i<lo+k; i++)
+      compare(i, i+k, dir);
+    recbitonicMerge(lo, k, dir);
+    recbitonicMerge(lo+k, k, dir);
+ 
+ }
+}
+
+
+
 
 
 
@@ -179,7 +243,10 @@ void recBitonicSort(int lo, int cnt, int dir) {
     int k=cnt/2;
     recBitonicSort(lo, k, ASCENDING);
     recBitonicSort(lo+k, k, DESCENDING);
-    bitonicMerge(lo, cnt, dir);
+    if (cnt==N)
+    	bitonicMerge(lo, cnt, dir);
+    else
+	recbitonicMerge(lo, cnt, dir);
   }
 }
 
@@ -199,12 +266,15 @@ void sort() {
 */
 void impBitonicSort() {
 
-  int i,j,k;
-  
-  for (k=2; k<=N; k=2*k) {
+  int i,j,k,ij;
+#pragma omp parallel num_threads(NT) shared(a,chunk)  private(k,j,i,ij)
+{
+  for (k=2; k<=N;k=2*k) {
     for (j=k>>1; j>0; j=j>>1) {
+
+      #pragma omp for schedule(dynamic,chunk)  
       for (i=0; i<N; i++) {
-	int ij=i^j;
+	 ij=i^j;
 	if ((ij)>i) {
 	  if ((i&k)==0 && a[i] > a[ij]) 
 	      exchange(i,ij);
@@ -214,5 +284,7 @@ void impBitonicSort() {
       }
     }
   }
+}
+
 }
 
