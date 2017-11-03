@@ -30,13 +30,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
-
+#include <cilk/cilk.h>
+#include <cilk/cilk_api.h>
 struct timeval startwtime, endwtime;
 double seq_time;
 
 
 int N;          // data array size
-int NT;		// number of Threads
+char* NT;		// number of Threads
 int *a;         // data array to be sorted
 
 const int ASCENDING  = 1;
@@ -64,8 +65,10 @@ int main(int argc, char **argv) {
   }
 
   N = 1<<atoi(argv[1]);
-  NT = atoi(argv[2]);
+  NT = argv[2];
   a = (int *) malloc(N * sizeof(int));
+
+  __cilkrts_set_param("nworkers",NT);
   
   init();
 
@@ -203,7 +206,7 @@ void impBitonicSort() {
   
   for (k=2; k<=N; k=2*k) {
     for (j=k>>1; j>0; j=j>>1) {
-      for (i=0; i<N; i++) {
+      cilk_for (i=0; i<N; i++) {
 	int ij=i^j;
 	if ((ij)>i) {
 	  if ((i&k)==0 && a[i] > a[ij]) 
