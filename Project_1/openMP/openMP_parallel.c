@@ -41,6 +41,7 @@ int NT;		// number of Threads
 int *a;         // data array to be sorted
 int chunk;	// chunk in parallel region
 
+
 const int ASCENDING  = 1;
 const int DESCENDING = 0;
 
@@ -54,6 +55,7 @@ void compare(int i, int j, int dir);
 void bitonicMerge(int lo, int cnt, int dir);
 void recbitonicMerge(int lo, int cnt, int dir);
 void recBitonicSort(int lo, int cnt, int dir);
+void ser_recBitonicSort(int lo, int cnt, int dir);
 void impBitonicSort(void);
 
 
@@ -73,7 +75,9 @@ int tid,nthreads;
   a = (int *) malloc(N * sizeof(int));
 
   chunk = (N/NT)/2;  
-
+//omp_set_num_threads(1); 
+omp_set_nested(1);
+printf("Thread limit %d\n",omp_get_num_threads());
   init();
 
   gettimeofday (&startwtime, NULL);
@@ -106,7 +110,7 @@ int tid,nthreads;
   if (tid == 0) 
   {
     nthreads = omp_get_num_threads();
-    printf("Number of threads = %d\n", nthreads);
+    //printf("Number of threads = %d\n", nthreads);
   }
 }
   // print();
@@ -182,28 +186,15 @@ void bitonicMerge(int lo, int cnt, int dir) {
     int i;
     int ans;
     int tid;
-#pragma omp parallel num_threads(NT) shared(a)   private(i,tid)
-{
-    
-    tid = omp_get_thread_num();
-  //printf("Thread id = %d\n", tid);
-  if (tid == 0)
-  {
-    int nthreads = omp_get_num_threads();
-    //printf("Number of threads = %d\n", nthreads);
-  }
-   
-    #pragma omp for schedule(dynamic,cnt)  
+
+
     for (i=lo; i<lo+k; i++)
       compare(i, i+k, dir);
-}
 
-	
+
     	bitonicMerge(lo, k, dir);
 	
     	bitonicMerge(lo+k, k, dir);
-	
-
 	
  }
 }
@@ -239,16 +230,81 @@ void recbitonicMerge(int lo, int cnt, int dir) {
     calls bitonicMerge to make them in the same order 
  **/
 void recBitonicSort(int lo, int cnt, int dir) {
+int k;
+
   if (cnt>1) {
-    int k=cnt/2;
-    recBitonicSort(lo, k, ASCENDING);
-    recBitonicSort(lo+k, k, DESCENDING);
-    if (cnt==N)
-    	bitonicMerge(lo, cnt, dir);
-    else
-	recbitonicMerge(lo, cnt, dir);
-  }
+      k=cnt/2;
+//printf("Thread id = %d\n", krecB);
+//printf("Thread id = %d\n", k);
+if(k<(N/256) || omp_get_num_threads()>=NT){
+	ser_recBitonicSort(lo, k, ASCENDING);
+	ser_recBitonicSort(lo+k, k, DESCENDING);
+	//printf("Thread id \n");
 }
+else{
+#pragma omp parallel num_threads(2) shared(a,k,lo) if (omp_get_num_threads()< NT)
+{
+  int tid = omp_get_thread_num();
+  //printf("Thread id = %d\n", tid);
+
+
+    #pragma omp single 
+    {
+      #pragma omp task 
+      {
+
+	recBitonicSort(lo, k, ASCENDING);
+
+	//printf("Thread id = %d\n", tid);
+      }   
+      #pragma omp task 
+      {
+
+	recBitonicSort(lo+k, k, DESCENDING);
+      
+	//printf("Thread id = %d\n", tid);
+	}
+    }
+}
+}
+
+    
+
+
+	bitonicMerge(lo, cnt, dir);
+
+
+  }
+
+}
+
+
+/** function recBitonicSort() 
+    first produces a bitonic sequence by recursively sorting 
+    its two halves in opposite sorting orders, and then
+    calls bitonicMerge to make them in the same order 
+ **/
+void ser_recBitonicSort(int lo, int cnt, int dir) {
+int k;
+
+  if (cnt>1) {
+      k=cnt/2;
+//if(k>(N/4))
+//printf("Thread id = %d\n", k);
+      ser_recBitonicSort(lo, k, ASCENDING);
+      
+      ser_recBitonicSort(lo+k, k, DESCENDING);
+           
+   
+      bitonicMerge(lo, cnt, dir);
+
+  }
+
+}
+
+
+
+
 
 
 /** function sort() 
@@ -272,7 +328,7 @@ void impBitonicSort() {
   for (k=2; k<=N;k=2*k) {
     for (j=k>>1; j>0; j=j>>1) {
 
-      #pragma omp for schedule(dynamic,chunk)  
+      #pragma omp for schedule(dynamic,chunk) 
       for (i=0; i<N; i++) {
 	 ij=i^j;
 	if ((ij)>i) {

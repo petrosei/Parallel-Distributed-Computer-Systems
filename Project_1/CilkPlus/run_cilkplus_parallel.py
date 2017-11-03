@@ -11,7 +11,7 @@ import os
 DEVNULL = open(os.devnull, 'wb')
 
 processors = [1, 2, 4, 8, 16, 32, 64, 128, 256]
-Q = range(12, 24)
+Q = range(12, 25)
 
 
 command = "./cilkplus_parallel"

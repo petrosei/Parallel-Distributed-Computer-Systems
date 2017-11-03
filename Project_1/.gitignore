@@ -7,3 +7,4 @@ CilkPlus/cilkplus_parallel
 pthreads/pthreads_parallel
 omp-hands-on-SC08.pdf
 bitonic-pthreads.pdf
+*.swp
