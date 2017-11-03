@@ -180,8 +180,9 @@ void bitonicMerge(int lo, int cnt, int dir) {
 void recBitonicSort(int lo, int cnt, int dir) {
   if (cnt>1) {
     int k=cnt/2;
-    recBitonicSort(lo, k, ASCENDING);
+    cilk_spawn recBitonicSort(lo, k, ASCENDING);
     recBitonicSort(lo+k, k, DESCENDING);
+    cilk_sync;  
     bitonicMerge(lo, cnt, dir);
   }
 }
