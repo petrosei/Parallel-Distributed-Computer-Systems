@@ -31,7 +31,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <omp.h>
-
+//#include <math.h>
 struct timeval startwtime, endwtime;
 double seq_time;
 
@@ -40,8 +40,9 @@ int N;          // data array size
 int NT;		// number of Threads
 int *a;         // data array to be sorted
 int chunk;	// chunk in parallel region
-
-
+int numoft = 1;
+int tid0;
+int tid1;
 const int ASCENDING  = 1;
 const int DESCENDING = 0;
 
@@ -57,6 +58,7 @@ void recbitonicMerge(int lo, int cnt, int dir);
 void recBitonicSort(int lo, int cnt, int dir);
 void ser_recBitonicSort(int lo, int cnt, int dir);
 void impBitonicSort(void);
+
 
 
 /** the main program **/ 
@@ -77,6 +79,7 @@ int tid,nthreads;
   chunk = (N/NT);  
 //omp_set_num_threads(1); 
 omp_set_nested(1);
+
 printf("Thread limit %d\n",omp_get_num_threads());
   init();
 
@@ -91,9 +94,11 @@ printf("Thread limit %d\n",omp_get_num_threads());
 
   test();
 
+
   init();
   gettimeofday (&startwtime, NULL);
   sort();
+  printf("Number of threads %d\n",numoft);
   gettimeofday (&endwtime, NULL);
 
   seq_time = (double)((endwtime.tv_usec - startwtime.tv_usec)/1.0e6
@@ -237,34 +242,42 @@ int k;
 //printf("Thread id = %d\n", krecB);
 //printf("Thread id = %d\n", k);
 
-if(k<(N/256) || omp_get_num_threads()>=NT){
+
+//int nnn = omp_get_num_threads();
+//    printf("Thread nnn = %d\n", nnn);
+
+if( numoft+1>NT){
 	ser_recBitonicSort(lo, k, ASCENDING);
 	ser_recBitonicSort(lo+k, k, DESCENDING);
 	//printf("Thread id \n");
 }
 else{
-#pragma omp parallel num_threads(2) shared(a,k,lo) if (omp_get_num_threads()< NT)
+
+
+
+numoft = numoft +1;
+#pragma omp parallel shared(a,k,lo) //if (omp_get_num_threads()< NT)
 {
-  int tid = omp_get_num_threads();
-  printf("Thread id = %d\n", tid);
 
 
     #pragma omp single 
-    {
-      #pragma omp task 
-      {
+    {  
 
-	recBitonicSort(lo, k, ASCENDING);
-
-	//printf("Thread id = %d\n", tid);
-      }   
-      #pragma omp task 
-      {
-
-	recBitonicSort(lo+k, k, DESCENDING);
       
-	//printf("Thread id = %d\n", tid);
+	#pragma omp task 
+      {
+	recBitonicSort(lo, k, ASCENDING);
+	tid0 = omp_get_thread_num();	
+
+         
+      }
+      #pragma omp task 
+      {
+	tid1 = omp_get_thread_num();
+	recBitonicSort(lo+k, k, DESCENDING);
+
 	}
+	
     }
 }
 }
