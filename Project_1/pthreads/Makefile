@@ -1,11 +1,11 @@
 
 CC = gcc
-CFLAGS = 
+CFLAGS = -lpthread
 CNAME = pthreads_parallel.c
 EXECNAME = pthreads_parallel
 
-qsort_serial:
-	$(CC) -o $(EXECNAME) $(CNAME)
+pthreads:
+	$(CC) -o $(EXECNAME) $(CNAME) $(CFLAGS)
 
 clean:
 	rm $(EXECNAME)

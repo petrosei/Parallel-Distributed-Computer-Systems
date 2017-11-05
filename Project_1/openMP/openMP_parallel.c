@@ -74,7 +74,7 @@ int tid,nthreads;
   NT = atoi(argv[2]);
   a = (int *) malloc(N * sizeof(int));
 
-  chunk = (N/NT)/2;  
+  chunk = (N/NT);  
 //omp_set_num_threads(1); 
 omp_set_nested(1);
 printf("Thread limit %d\n",omp_get_num_threads());
@@ -236,6 +236,7 @@ int k;
       k=cnt/2;
 //printf("Thread id = %d\n", krecB);
 //printf("Thread id = %d\n", k);
+
 if(k<(N/256) || omp_get_num_threads()>=NT){
 	ser_recBitonicSort(lo, k, ASCENDING);
 	ser_recBitonicSort(lo+k, k, DESCENDING);
@@ -244,8 +245,8 @@ if(k<(N/256) || omp_get_num_threads()>=NT){
 else{
 #pragma omp parallel num_threads(2) shared(a,k,lo) if (omp_get_num_threads()< NT)
 {
-  int tid = omp_get_thread_num();
-  //printf("Thread id = %d\n", tid);
+  int tid = omp_get_num_threads();
+  printf("Thread id = %d\n", tid);
 
 
     #pragma omp single 

@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <pthread.h>
 
 struct timeval startwtime, endwtime;
 double seq_time;
@@ -52,6 +53,19 @@ void compare(int i, int j, int dir);
 void bitonicMerge(int lo, int cnt, int dir);
 void recBitonicSort(int lo, int cnt, int dir);
 void impBitonicSort(void);
+
+
+
+
+void *PrintHello(void *threadid)
+ {
+    long tid;
+    tid = (long)threadid;
+    printf("Hello World! It's me, thread #%ld!\n", tid);
+    pthread_exit(NULL);
+ }
+
+
 
 
 /** the main program **/ 
@@ -85,12 +99,29 @@ int main(int argc, char **argv) {
   sort();
   gettimeofday (&endwtime, NULL);
 
-  seq_time = (double)((endwtime.tv_usec - startwtime.tv_usec)/1.0e6
+ seq_time = (double)((endwtime.tv_usec - startwtime.tv_usec)/1.0e6
 		      + endwtime.tv_sec - startwtime.tv_sec);
 
   printf("Recursive wall clock time = %f\n", seq_time);
 
   test();
+
+
+   pthread_t threads[NT];
+    int rc;
+    long t;
+    for(t=0; t<NT; t++){
+       printf("In main: creating thread %ld\n", t);
+       rc = pthread_create(&threads[t], NULL, PrintHello, (void *)t);
+       if (rc){
+          printf("ERROR; return code from pthread_create() is %d\n", rc);
+          exit(-1);
+       }
+    }
+
+    /* Last thing that main() should do */
+    pthread_exit(NULL);
+
 
   // print();
 }
@@ -198,7 +229,7 @@ void sort() {
   imperative version of bitonic sort
 */
 void impBitonicSort() {
-
+  pthread_t threads[NT];
   int i,j,k;
   
   for (k=2; k<=N; k=2*k) {
