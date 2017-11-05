@@ -250,13 +250,15 @@ if( numoft+1>NT){
 	ser_recBitonicSort(lo, k, ASCENDING);
 	ser_recBitonicSort(lo+k, k, DESCENDING);
 	//printf("Thread id \n");
+	tid0 = omp_get_thread_num();
+        printf("TID0 = %d\n",tid0);
 }
 else{
 
-
-
 numoft = numoft +1;
-#pragma omp parallel shared(a,k,lo) //if (omp_get_num_threads()< NT)
+
+
+#pragma omp parallel num_threads(2)  shared(a,k,lo,numoft) //if (omp_get_num_threads()< NT)
 {
 
 
@@ -267,15 +269,15 @@ numoft = numoft +1;
 	#pragma omp task 
       {
 	recBitonicSort(lo, k, ASCENDING);
-	tid0 = omp_get_thread_num();	
-
+	//tid0 = omp_get_thread_num();	
+	//printf("TID0 = %d\n",tid0);
          
       }
       #pragma omp task 
       {
-	tid1 = omp_get_thread_num();
+	//tid1 = omp_get_thread_num();
 	recBitonicSort(lo+k, k, DESCENDING);
-
+	 //printf("TID1 = %d\n",tid1);
 	}
 	
     }
