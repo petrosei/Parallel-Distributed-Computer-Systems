@@ -11,7 +11,7 @@ import os
 DEVNULL = open(os.devnull, 'wb')
 
 
-Q = range(20, 21)
+Q = range(12, 25)
 
 
 command = "./bitonic_serial"
