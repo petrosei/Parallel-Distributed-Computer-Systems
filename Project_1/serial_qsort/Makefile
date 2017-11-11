@@ -5,7 +5,7 @@ CNAME = qsort.c
 EXECNAME = qsort_serial
 
 qsort_serial:
-	$(CC) -o $(EXECNAME) $(CNAME)
+	$(CC) -O3 -o $(EXECNAME) $(CNAME)
 
 clean:
 	rm $(EXECNAME)

@@ -11,7 +11,7 @@ import os
 DEVNULL = open(os.devnull, 'wb')
 
 
-Q = range(12, 25)
+Q = range(20, 21)
 
 
 command = "./qsort_serial"
@@ -22,12 +22,20 @@ p2 = Popen(["mkdir",path2], stdout=DEVNULL,stderr=DEVNULL)
 p3 = Popen(["rm","{0}/*".format(path2)], stdout=DEVNULL,stderr=DEVNULL)
 
 for q in Q:
+	sumtime = 0
+        count = 0
 	filename = "{0}/qsortserialresults{1}.txt".format(path2,q)
 	p4 = Popen(["touch",filename], stdout=DEVNULL,stderr=DEVNULL)
 	arguments = "{}".format(q)
-	p = Popen([command,arguments], stdout=PIPE)
-       	out1 = p.communicate()[0]
-	out2 = out1.split()
-	out3 = "{0} {1}".format(out2[4],out2[6])
+	for i in range(0, 10):
+		p = Popen([command,arguments], stdout=PIPE)
+       		out1 = p.communicate()[0]
+		out2 = out1.split()
+                status = out2[6]
+                time = float(out2[4])
+                sumtime = sumtime + time
+                count = count +1
+        time = float(sumtime)/count
+	out3 = "{0} {1}".format(time,status)
 	f = open(filename,"w")
 	f.write(out3)

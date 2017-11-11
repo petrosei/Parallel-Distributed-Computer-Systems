@@ -54,6 +54,7 @@ void exchange(int i, int j);
 void compare(int i, int j, int dir);
 void bitonicMerge(int lo, int cnt, int dir);
 void recBitonicSort(int lo, int cnt, int dir);
+void PrecBitonicSort(int lo, int cnt, int dir);
 void impBitonicSort(void);
 
 
@@ -165,26 +166,24 @@ int main(int argc, char **argv) {
   N = 1<<atoi(argv[1]);
   NT = atoi(argv[2]);
   a = (int *) malloc(N * sizeof(int));
-  init();
+  //init();
 
-  gettimeofday (&startwtime, NULL);
-  impBitonicSort();
-  gettimeofday (&endwtime, NULL);
+  //gettimeofday (&startwtime, NULL);
+  //impBitonicSort();
+  //gettimeofday (&endwtime, NULL);
 
-  seq_time = (double)((endwtime.tv_usec - startwtime.tv_usec)/1.0e6
-		      + endwtime.tv_sec - startwtime.tv_sec);
+  //seq_time = (double)((endwtime.tv_usec - startwtime.tv_usec)/1.0e6 + endwtime.tv_sec - startwtime.tv_sec);
 
-  printf("Imperative wall clock time = %f\n", seq_time);
+  //printf("Imperative wall clock time = %f\n", seq_time);
 
-  test();
+  //test();
 
   init();
   gettimeofday (&startwtime, NULL);
   sort();
   gettimeofday (&endwtime, NULL);
 
- seq_time = (double)((endwtime.tv_usec - startwtime.tv_usec)/1.0e6
-		      + endwtime.tv_sec - startwtime.tv_sec);
+ seq_time = (double)((endwtime.tv_usec - startwtime.tv_usec)/1.0e6 + endwtime.tv_sec - startwtime.tv_sec);
 
   printf("Recursive wall clock time = %f\n", seq_time);
 
@@ -215,7 +214,7 @@ void test() {
 //	printf("Pos of fail = %d\n",pos);	
     }
   }
-printf("Num of fails = %d\n",count);
+//printf("Num of fails = %d\n",count);
   printf(" TEST %s\n",(pass) ? "PASSed" : "FAILed");
 }
 

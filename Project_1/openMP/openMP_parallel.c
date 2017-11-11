@@ -80,7 +80,7 @@ int tid,nthreads;
 //omp_set_num_threads(1); 
 omp_set_nested(1);
 
-printf("Thread limit %d\n",omp_get_num_threads());
+//printf("Thread limit %d\n",omp_get_num_threads());
   init();
 
   gettimeofday (&startwtime, NULL);
@@ -98,7 +98,7 @@ printf("Thread limit %d\n",omp_get_num_threads());
   init();
   gettimeofday (&startwtime, NULL);
   sort();
-  printf("Number of threads %d\n",numoft);
+  //printf("Number of threads %d\n",numoft);
   gettimeofday (&endwtime, NULL);
 
   seq_time = (double)((endwtime.tv_usec - startwtime.tv_usec)/1.0e6
@@ -251,7 +251,7 @@ if( numoft+1>NT){
 	ser_recBitonicSort(lo+k, k, DESCENDING);
 	//printf("Thread id \n");
 	tid0 = omp_get_thread_num();
-        printf("TID0 = %d\n",tid0);
+        //printf("TID0 = %d\n",tid0);
 }
 else{
 
