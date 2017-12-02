@@ -1,4 +1,11 @@
 /*
+
+ Parallel implementation of bitonix sort using pThreads.
+
+ Author: Evangelakos Petros 
+
+ Based on:
+
  bitonic.c 
 
  This file contains two different implementations of the bitonic sort
@@ -70,47 +77,6 @@ struct thread_data{
    int  shared_j;
 };
 
-struct thread_data data;
-
-void *PimpBitonicSort(void *threadarg)
- {
-    int tid,i,chunk,ij,start,stop,k,j,temp;
-    struct thread_data *my_data;
-    my_data = (struct thread_data *) threadarg;
-    tid = my_data->thread_id;
-    //tid = (int)threadarg;
-    k = my_data->shared_k;
-    j = my_data->shared_j;
-   // printf("Hello World! It's me, thread #%d!,  j = %d, k = %d\n", tid,j,k);
-    chunk = N/NT;
-    start =  tid*chunk;
-    stop =  (tid+1)*chunk;
-//printf("Limits of thread %d start =  %d ,stop = %d, N = %d\n",tid, start,stop,N);
-//for (k=2; k<=N; k=2*k) {
-//  for (j=k>>1; j>0; j=j>>1) {
-    for (i=start; i<stop; i++) {
-        ij=i^j;
-        if ((ij)>i) {
-          if ((i&k)==0 && a[i] > a[ij]){
-              temp = a[i];
-  	     a[i] = a[j];
-  	     a[j] = temp;
-	     //exchange(i,ij);
-	  }
-          if ((i&k)!=0 && a[i] < a[ij]){
-	     temp = a[i];
-  	     a[i] = a[j];
-  	     a[j] = temp; 
-              //exchange(i,ij);
-	  }
-        }
-      }
-//  }
-//}
-   pthread_exit(NULL);
-
- }
-
 
 
 /* 
@@ -166,24 +132,14 @@ int main(int argc, char **argv) {
   N = 1<<atoi(argv[1]);
   NT = atoi(argv[2]);
   a = (int *) malloc(N * sizeof(int));
-  //init();
-
-  //gettimeofday (&startwtime, NULL);
-  //impBitonicSort();
-  //gettimeofday (&endwtime, NULL);
-
-  //seq_time = (double)((endwtime.tv_usec - startwtime.tv_usec)/1.0e6 + endwtime.tv_sec - startwtime.tv_sec);
-
-  //printf("Imperative wall clock time = %f\n", seq_time);
-
-  //test();
+  
 
   init();
   gettimeofday (&startwtime, NULL);
   sort();
   gettimeofday (&endwtime, NULL);
 
- seq_time = (double)((endwtime.tv_usec - startwtime.tv_usec)/1.0e6 + endwtime.tv_sec - startwtime.tv_sec);
+  seq_time = (double)((endwtime.tv_usec - startwtime.tv_usec)/1.0e6 + endwtime.tv_sec - startwtime.tv_sec);
 
   printf("Recursive wall clock time = %f\n", seq_time);
 
@@ -208,13 +164,7 @@ void test() {
   int i;
   for (i = 1; i < N; i++) {
     pass &= (a[i-1] <= a[i]);
-    if(a[i-1] > a[i]){
-	count++;
-	pos = i;
-//	printf("Pos of fail = %d\n",pos);	
-    }
   }
-//printf("Num of fails = %d\n",count);
   printf(" TEST %s\n",(pass) ? "PASSed" : "FAILed");
 }
 
@@ -317,26 +267,21 @@ void PrecBitonicSort(int lo, int cnt, int dir) {
     data_rec.thread_cnt = k;
     data_rec.thread_dir = dir;
     data_rec.thread_id = 0;
-//    for(t=0; t<2; t++){
+
        rc = pthread_create(&threads[0], &attr, Prec, (void *)&data_rec);
        if (rc){
           printf("ERROR; return code from pthread_create() is %d\n", rc);
           exit(-1);
        }
 
-//       data.thread_id = t;
-//    }
 	
       PrecBitonicSort(lo+k, k, DESCENDING);      
 
-//    for(t=0; t<2; t++) {
        rc = pthread_join(threads[0], &status);
        if (rc) {
           printf("ERROR; return code from pthread_join() is %d\n", rc);
           exit(-1);
           }
-//       printf("Main: completed join with thread %d having a status of %ld\n",t,(long)status);
-//       }
        pthread_attr_destroy(&attr);
    }
    else{
@@ -358,53 +303,4 @@ void sort() {
   PrecBitonicSort(0, N, ASCENDING);
 }
 
-
-
-/*
-  imperative version of bitonic sort
-*/
-void impBitonicSort() {
-  pthread_t threads[NT];
-  int t,j,k,rc;
-void *status;
-
- pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE); 
-  for (k=2; k<=N; k=2*k) {
-    data.shared_k = k;
-    for (j=k>>1; j>0; j=j>>1) {
-      data.shared_j = j;
-      
-
-     data.thread_id = 0; 
-      for(t=0; t<NT; t++){
-	rc = pthread_create(&threads[t], &attr, PimpBitonicSort, (void *)&data);
-       if (rc){
-          printf("ERROR; return code from pthread_create() is %d\n", rc);
-          exit(-1);
-       }
-	
-       data.thread_id = t;
-    }
-
-    for(t=0; t<NT; t++) {
-       rc = pthread_join(threads[t], &status);
-       if (rc) {
-          printf("ERROR; return code from pthread_join() is %d\n", rc);
-          exit(-1);
-          }
-//       printf("Main: completed join with thread %d having a status of %ld\n",t,(long)status);
-       }
-
-//     printf("Main: program completed. Exiting.\n");
-
-    }
-  }
-
-    pthread_attr_destroy(&attr);
- //pthread_exit(NULL);
-
-
-}
 

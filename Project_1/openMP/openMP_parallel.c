@@ -1,4 +1,11 @@
 /*
+
+ Parallel implementation of bitonix sort using pThreads.
+
+ Author: Evangelakos Petros 
+
+ Based on:
+
  bitonic.c 
 
  This file contains two different implementations of the bitonic sort
@@ -31,7 +38,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <omp.h>
-//#include <math.h>
+
 struct timeval startwtime, endwtime;
 double seq_time;
 
@@ -77,10 +84,10 @@ int tid,nthreads;
   a = (int *) malloc(N * sizeof(int));
 
   chunk = (N/NT);  
-//omp_set_num_threads(1); 
-omp_set_nested(1);
+ 
+  omp_set_nested(1);
 
-//printf("Thread limit %d\n",omp_get_num_threads());
+
   init();
 
   gettimeofday (&startwtime, NULL);
@@ -98,7 +105,7 @@ omp_set_nested(1);
   init();
   gettimeofday (&startwtime, NULL);
   sort();
-  //printf("Number of threads %d\n",numoft);
+  
   gettimeofday (&endwtime, NULL);
 
   seq_time = (double)((endwtime.tv_usec - startwtime.tv_usec)/1.0e6
@@ -107,18 +114,8 @@ omp_set_nested(1);
   printf("Recursive wall clock time = %f\n", seq_time);
 
   test();
-
- #pragma omp parallel num_threads(NT)  private(tid)
-{
-  tid = omp_get_thread_num();
-  //printf("Thread id = %d\n", tid);
-  if (tid == 0) 
-  {
-    nthreads = omp_get_num_threads();
-    //printf("Number of threads = %d\n", nthreads);
-  }
-}
-  // print();
+  
+// print();
 }
 
 /** -------------- SUB-PROCEDURES  ----------------- **/ 
@@ -230,72 +227,47 @@ void recbitonicMerge(int lo, int cnt, int dir) {
 
 
 /** function recBitonicSort() 
-    first produces a bitonic sequence by recursively sorting 
-    its two halves in opposite sorting orders, and then
-    calls bitonicMerge to make them in the same order 
+    parallel implementation of ser_recBitonicSort() 
  **/
 void recBitonicSort(int lo, int cnt, int dir) {
-int k;
+  int k;
 
   if (cnt>1) {
-      k=cnt/2;
-//printf("Thread id = %d\n", krecB);
-//printf("Thread id = %d\n", k);
+    k=cnt/2;
 
-
-//int nnn = omp_get_num_threads();
-//    printf("Thread nnn = %d\n", nnn);
-
-if( numoft+1>NT){
-	ser_recBitonicSort(lo, k, ASCENDING);
-	ser_recBitonicSort(lo+k, k, DESCENDING);
-	//printf("Thread id \n");
-	tid0 = omp_get_thread_num();
-        //printf("TID0 = %d\n",tid0);
-}
-else{
-
-numoft = numoft +1;
-
-
-#pragma omp parallel num_threads(2)  shared(a,k,lo,numoft) //if (omp_get_num_threads()< NT)
-{
-
-
-    #pragma omp single 
-    {  
-
-      
-	#pragma omp task 
-      {
-	recBitonicSort(lo, k, ASCENDING);
-	//tid0 = omp_get_thread_num();	
-	//printf("TID0 = %d\n",tid0);
-         
-      }
-      #pragma omp task 
-      {
-	//tid1 = omp_get_thread_num();
-	recBitonicSort(lo+k, k, DESCENDING);
-	 //printf("TID1 = %d\n",tid1);
-	}
-	
+    if( numoft+1>NT){
+      ser_recBitonicSort(lo, k, ASCENDING);
+      ser_recBitonicSort(lo+k, k, DESCENDING);
     }
-}
-}
+    else{
 
-    
+      numoft = numoft +1;
 
 
-	bitonicMerge(lo, cnt, dir);
+      #pragma omp parallel num_threads(2)  shared(a,k,lo,numoft) //if (omp_get_num_threads()< NT)
+      {
+        #pragma omp single 
+        {    
+	  #pragma omp task 
+          {
+	  recBitonicSort(lo, k, ASCENDING); 
+          }
+          #pragma omp task 
+          {
+	    recBitonicSort(lo+k, k, DESCENDING);
+  	  }	
+        }
+      }
+    }
 
+    bitonicMerge(lo, cnt, dir);
 
   }
 
 }
 
 
-/** function recBitonicSort() 
+/** function ser_recBitonicSort() 
     first produces a bitonic sequence by recursively sorting 
     its two halves in opposite sorting orders, and then
     calls bitonicMerge to make them in the same order 
@@ -305,8 +277,7 @@ int k;
 
   if (cnt>1) {
       k=cnt/2;
-//if(k>(N/4))
-//printf("Thread id = %d\n", k);
+
       ser_recBitonicSort(lo, k, ASCENDING);
       
       ser_recBitonicSort(lo+k, k, DESCENDING);
