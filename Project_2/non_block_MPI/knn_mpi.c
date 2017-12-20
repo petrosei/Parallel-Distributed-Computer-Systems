@@ -4,7 +4,7 @@
 #include <float.h>
 #include <mpi.h>
 #include <string.h>
-
+#include <math.h>
 struct timeval startwtime, endwtime;
 double seq_time;
 
@@ -138,7 +138,7 @@ void init() {
       KNN_dist[i][j] = DBL_MAX;
     }
   }
-
+/*
   if (choice) {
     f = fopen("corpus.txt","w+");
     for (i = proc_rank*chunk; i < (proc_rank+1)*chunk; i++) {
@@ -150,7 +150,7 @@ void init() {
     }
     fclose(f);
   }
-
+*/
 
 
 
@@ -158,7 +158,7 @@ void init() {
 // Read a chunk of corpus from enery process 
     
 
-    f = fopen("corpus.txt","r");
+    f = fopen("mnist_train_svd.txt","r");
     
     for (i = 0; i < N; i++) {
       for (j = 0; j < D; j++) {
@@ -257,11 +257,11 @@ void test() {
     int count = 0;
     int ret_code = 0;
     char* name;
-    double error = 0.000001;
+    double error = 0.00001;
     double null,temp;
     FILE *f;
     
-    f = fopen("../validation/validate.txt","r");
+    f = fopen("validation_mnist_train_svd.txt","r");
   
     for (i = 0; i < N; ++i) {
       for (j = 0; j < K; ++j) {
@@ -311,9 +311,9 @@ void test() {
       for (j = 0; j < K; ++j) {
 
 	//pass &= ((val_dist[i][j] - KNN_dist[i][j]) <= error);
-	if((val_dist[i][j] - KNN_dist[i][j]) >= error){
+	if(abs(val_dist[i][j] - KNN_dist[i][j]) >= error){
 	   pass = 0;
-           //count++;
+           count++;
            //null  =  KNN_dist[i][j];
            //temp = val_dist[i][j];
           //printf("%d\t%d\t%lf\n",i,j,val_dist[i][j]); 
@@ -321,7 +321,7 @@ void test() {
       }
     }
     printf("%s\t TEST %s\n",name,(pass) ? "PASSed" : "FAILed");
-    //printf("%d\n",count);
+    printf("%d\n",count);
     //printf("%lf\n\n\n\n",val_dist[0][0]);
 
 

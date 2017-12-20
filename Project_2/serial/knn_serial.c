@@ -2,8 +2,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <float.h>
-
-
+#include <math.h>
 struct timeval startwtime, endwtime;
 double seq_time;
 
@@ -89,7 +88,7 @@ void init() {
       KNN_dist[i][j] = LDBL_MAX;
     }
   }
-
+/*
   if (choice) {
     f = fopen("corpus.txt","w+");
     for (i = 0; i < N; i++) {
@@ -101,8 +100,8 @@ void init() {
     }
     fclose(f);
   }
-  
-    f = fopen("corpus.txt","r");
+ */ 
+    f = fopen("mnist_train_svd.txt","r");
     for (i = 0; i < N; ++i) {
       for (j = 0; j < D; ++j) {
         fscanf(f, "%Lf\t", &a[i][j]);
@@ -157,7 +156,7 @@ void test() {
     int count = 0;
     double error = 0.000001; 
     FILE *f;
-    f = fopen("../validation/validate.txt","r");
+    f = fopen("validation_mnist_train_svd.txt","r");
     for (i = 0; i < N; ++i) {
       for (j = 0; j < K; ++j) {
         fscanf(f, "%Lf\t", &val_dist[i][j]);
@@ -181,7 +180,7 @@ void test() {
     for (i = 0; i < N; ++i) {
       for (j = 0; j < K; ++j) {
 
-	pass &= ((val_dist[i][j] - KNN_dist[i][j]) <= error);
+	pass &= (abs(val_dist[i][j] - KNN_dist[i][j]) <= error);
 	//if((val_dist[i][j] - KNN_dist[i][j]) > error) count++;
       }
     }

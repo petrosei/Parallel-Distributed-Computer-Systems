@@ -8,4 +8,10 @@ pthreads/pthreads_parallel
 omp-hands-on-SC08.pdf
 knn-ring-mpi.pdf
 *.swp
+*.txt
 Report.pdf
+data
+block_MPI/knn_mpi
+non_block_MPI/knn_mpi
+serial/knn_serial
+

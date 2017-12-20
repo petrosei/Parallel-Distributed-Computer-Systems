@@ -4,6 +4,7 @@
 #include <float.h>
 #include <mpi.h>
 #include <string.h>
+#include <math.h>
 
 struct timeval startwtime, endwtime;
 double seq_time;
@@ -157,7 +158,7 @@ void init() {
 // Read a chunk of corpus from enery process 
     
 
-    f = fopen("corpus.txt","r");
+    f = fopen("mnist_train_svd.txt","r");
     
     for (i = 0; i < N; i++) {
       for (j = 0; j < D; j++) {
@@ -267,7 +268,7 @@ void test() {
     double null,temp;
     FILE *f;
     
-    f = fopen("../validation/validate.txt","r");
+    f = fopen("validation_mnist_train_svd.txt","r");
   
     for (i = 0; i < N; ++i) {
       for (j = 0; j < K; ++j) {
@@ -317,7 +318,7 @@ void test() {
       for (j = 0; j < K; ++j) {
 
 	//pass &= ((val_dist[i][j] - KNN_dist[i][j]) <= error);
-	if((val_dist[i][j] - KNN_dist[i][j]) >= error){
+	if(abs(val_dist[i][j] - KNN_dist[i][j]) >= error){
 	   pass = 0;
            //count++;
            //null  =  KNN_dist[i][j];
