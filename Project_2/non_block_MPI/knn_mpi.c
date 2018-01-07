@@ -238,7 +238,7 @@ void knn() {
 
   
   
-  MPI_Waitall(2, reqs, stats);
+  //MPI_Waitall(2, reqs, stats);
   for (i = 0; i < chunk; i++) {
     for (j = 0; j < D; j++) {
     
