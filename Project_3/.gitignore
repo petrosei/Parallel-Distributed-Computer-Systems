@@ -1,0 +1,11 @@
+
+Results
+*.swp
+*.txt
+*.pdf
+*.mat
+*.m~
+data
+
+serial/meanshift_serial
+
