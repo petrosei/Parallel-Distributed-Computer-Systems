@@ -1,3 +1,4 @@
 #!/bin/sh
-rm knn_serial
-gcc -O3 -o knn_serial knn_serial.c
+rm meanshift_cuda
+nvcc -O3 -o meanshift_cuda meanshift_cuda.cu
+#gcc -O3 -o meanshift_cuda meanshift_cuda.c

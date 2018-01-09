@@ -10,17 +10,17 @@ double seq_time;
 int N; // number of elements
 int D; // dimensions
 int sigma = 1;
-double MS_error = 0.0001; // mean shift error
+float MS_error = 0.0001; // mean shift error
 
 
-double **x; // initilal matrix
-double **y; // final matrix
-double **y_new;
-double **val_y; // validation final matrix
-double **m; // mean shift vectrors
-double **g; // gaussian
-double **numer; // numerator
-double **denom; // denominator
+float **x; // initilal matrix
+float **y; // final matrix
+float **y_new;
+float **val_y; // validation final matrix
+float **m; // mean shift vectrors
+float **g; // gaussian
+float **numer; // numerator
+float **denom; // denominator
 
 void init(void);
 void mean_shift(void);
@@ -64,53 +64,53 @@ int main(int argc, char **argv) {
 void init() {
   int i,j;
   int ret_code = 0;
-  double temp;
+  float temp;
   FILE *f;
 
-  x = (double **) malloc(N * sizeof(double*));
+  x = (float **) malloc(N * sizeof(float*));
   for (i = 0; i < N; i++) {
-    x[i] = (double *) malloc(D * sizeof(double));
+    x[i] = (float *) malloc(D * sizeof(float));
   }
 
-  y = (double **) malloc(N * sizeof(double*));
+  y = (float **) malloc(N * sizeof(float*));
   for (i = 0; i < N; i++) {
-    y[i] = (double *) malloc(D * sizeof(double));
+    y[i] = (float *) malloc(D * sizeof(float));
   }
   
-  y_new = (double **) malloc(N * sizeof(double*));
+  y_new = (float **) malloc(N * sizeof(float*));
   for (i = 0; i < N; i++) {
-    y_new[i] = (double *) malloc(D * sizeof(double));
+    y_new[i] = (float *) malloc(D * sizeof(float));
   }
   
-  val_y = (double **) malloc(N * sizeof(double*));
+  val_y = (float **) malloc(N * sizeof(float*));
   for (i = 0; i < N; i++) {
-    val_y[i] = (double *) malloc(D * sizeof(double));
+    val_y[i] = (float *) malloc(D * sizeof(float));
   }
 
-  m = (double **) malloc(N * sizeof(double*));
+  m = (float **) malloc(N * sizeof(float*));
   for (i = 0; i < N; i++) {
-    m[i] = (double *) malloc(D * sizeof(double));
+    m[i] = (float *) malloc(D * sizeof(float));
   }
 
 
-  g = (double **) malloc(N * sizeof(double*));
+  g = (float **) malloc(N * sizeof(float*));
   for (i = 0; i < N; i++) {
-    g[i] = (double *) malloc(N * sizeof(double));
+    g[i] = (float *) malloc(N * sizeof(float));
   }
 
-  numer = (double **) malloc(N * sizeof(double*));
+  numer = (float **) malloc(N * sizeof(float*));
   for (i = 0; i < N; i++) {
-    numer[i] = (double *) malloc(D * sizeof(double));
+    numer[i] = (float *) malloc(D * sizeof(float));
   }
-  denom = (double **) malloc(N * sizeof(double*));
+  denom = (float **) malloc(N * sizeof(float*));
   for (i = 0; i < N; i++) {
-    denom[i] = (double *) malloc(D * sizeof(double));
+    denom[i] = (float *) malloc(D * sizeof(float));
   }
 
   f = fopen("../data/r15.txt","r");
   for (i = 0; i < N; ++i) {
     for (j = 0; j < D; ++j) {
-      ret_code = fscanf(f, "%lf\t", &x[i][j]);
+      ret_code = fscanf(f, "%f\t", &x[i][j]);
     }
     ret_code = fscanf(f,"\n");   
   }
@@ -124,7 +124,7 @@ void init() {
   
   for (i = 0; i < N; ++i) {
     for (j = 0; j < D; ++j) {
-      m[i][j] = DBL_MAX;
+      m[i][j] = FLT_MAX;
     }
   }
 
@@ -138,9 +138,9 @@ void init() {
 void mean_shift() {
   int iter = 0;
   int i,j,z;
-  double dist = 0;
-  double er = DBL_MAX;
-  double temp;
+  float dist = 0;
+  float er = FLT_MAX;
+  float temp;
   while(er > MS_error) {
      
     iter++;
@@ -176,24 +176,25 @@ void mean_shift() {
         temp += pow(m[i][z],2); 
       }
 
-      temp = sqrt(temp);
+      
       er += temp;
-
-    }
- 
-    er = sqrt(er);
-
-    for(i=0;i<N;i++){
+      
+      
+    
       for(z=0;z<D;z++){
         y[i][z] = y_new[i][z];
         numer[i][z] = 0;
         denom[i][z] = 0;
       }
 
+    
     }
+ 
+    er = sqrt(er);
+
    //printf("%lf,,,,,,%lf\n",y_new[1][1],y[1][1]); 
 
-    printf("Iteration = %d, Error = %lf\n",iter,er);
+    //printf("Iteration = %d, Error = %f\n",iter,er);
 
   } 
   
@@ -210,22 +211,22 @@ void test() {
     int pass = 1;
     int ret_code = 0;
     int count = 0;
-    double error = 0.0001; 
+    float error = 0.0001; 
     FILE *f;
     f = fopen("../data/validation_r15.txt","r");
     for (i = 0; i < N; ++i) {
       for (j = 0; j < D; ++j) {
-        ret_code = fscanf(f, "%lf\t", &val_y[i][j]);
+        ret_code = fscanf(f, "%f\t", &val_y[i][j]);
       }
         ret_code = fscanf(f,"\n");
     }
     fclose(f);
-    printf("%lf\n",fabs(val_y[1][1]-y[1][1]));
+    printf("%f\n",fabs(val_y[1][1]-y[1][1]));
     
    f = fopen("yout.txt","w+");
    for (i = 0; i < N; i++) {
       for (j = 0; j < D; j++) {
-        fprintf(f,"%lf\t",y[i][j]);
+        fprintf(f,"%f\t",y[i][j]);
       }
       fprintf(f,"\n");
     }
