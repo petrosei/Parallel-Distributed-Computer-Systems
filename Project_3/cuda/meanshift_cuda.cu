@@ -11,6 +11,7 @@ int N; // number of elements
 int D; // dimensions
 float sigma = 1.0;
 float MS_error = 0.0001; // mean shift error
+int iter_limit = 12;
 size_t cols;
 size_t rows;
 
@@ -178,11 +179,12 @@ m = (float *) malloc(N*D * sizeof(float));
 
 __global__ void cuda_mean_shift(int *N,int *D,float *sigma,float *x, float *y, float *y_new,float *m, float *g,float *numer,float *denom,size_t pitch){
 
- int tid = threadIdx.x;
+ //int tid = threadIdx.x;
  //int tid = blockIdx.x;
+ int tid = threadIdx.x + blockIdx.x * blockDim.x;
  int j,z;
  float dist=0; 
-    //for(i=0;i<N;i++){
+    if(tid<*N){
       
       for(j=0;j<*N;j++){
         float *row_g = (float *)((char*)g + j * pitch);
@@ -225,7 +227,7 @@ __global__ void cuda_mean_shift(int *N,int *D,float *sigma,float *x, float *y, f
       }
 
 
-   // }
+    }
 
 
 }
@@ -244,12 +246,12 @@ void mean_shift() {
 
   
 
-  while(er > MS_error) {
+  while(er > MS_error && iter<iter_limit) {
      
     iter++;
     er = 0;
     
-    cuda_mean_shift<<<1,N>>>(gp_N,gp_D,gp_sigma,gp_x,gp_y,gp_y_new,gp_m,gp_g,gp_numer,gp_denom,gp_pitch); 
+    cuda_mean_shift<<<N/600,600>>>(gp_N,gp_D,gp_sigma,gp_x,gp_y,gp_y_new,gp_m,gp_g,gp_numer,gp_denom,gp_pitch); 
    cudaMemcpy(m,gp_m,N*D*sizeof(float), cudaMemcpyDeviceToHost); 
    for(i=0;i<N;i++){
      for(z=0;z<D;z++){
@@ -263,7 +265,7 @@ void mean_shift() {
 
    //printf("%lf,,,,,,%lf\n",y_new[1][1],y[1][1]); 
 
-  //  printf("Iteration = %d, Error = %lf\n",iter,er);
+    printf("Iteration = %d, Error = %lf\n",iter,er);
 
   } 
   

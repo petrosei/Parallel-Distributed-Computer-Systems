@@ -11,7 +11,7 @@ int N; // number of elements
 int D; // dimensions
 int sigma = 1;
 float MS_error = 0.0001; // mean shift error
-
+int iter_limit = 12;
 
 float **x; // initilal matrix
 float **y; // final matrix
@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
   printf("KNN wall clock time = %f\n", seq_time);
   
 
-  test();
+  //test();
 }
 
 
@@ -107,7 +107,7 @@ void init() {
     denom[i] = (float *) malloc(D * sizeof(float));
   }
 
-  f = fopen("../data/r15.txt","r");
+  f = fopen("../data/r15_ext120.txt","r");
   for (i = 0; i < N; ++i) {
     for (j = 0; j < D; ++j) {
       ret_code = fscanf(f, "%f\t", &x[i][j]);
@@ -141,7 +141,7 @@ void mean_shift() {
   float dist = 0;
   float er = FLT_MAX;
   float temp;
-  while(er > MS_error) {
+  while(er > MS_error && iter<iter_limit) {
      
     iter++;
     er = 0;
@@ -194,7 +194,7 @@ void mean_shift() {
 
    //printf("%lf,,,,,,%lf\n",y_new[1][1],y[1][1]); 
 
-    //printf("Iteration = %d, Error = %f\n",iter,er);
+    printf("Iteration = %d, Error = %f\n",iter,er);
 
   } 
   
