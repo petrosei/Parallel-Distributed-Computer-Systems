@@ -91,29 +91,6 @@ void init() {
   
   FILE *f;
 
-  // Allocate system memmory
-/*
-  x = (float **) malloc(N * sizeof(float*));
-  for (i = 0; i < N; i++) {
-    x[i] = (float *) malloc(D * sizeof(float));
-  }
-
-  y = (float **) malloc(N * sizeof(float*));
-  for (i = 0; i < N; i++) {
-    y[i] = (float *) malloc(D * sizeof(float));
-  }
-
-
-  m = (float **) malloc(N * sizeof(float*));
-  for (i = 0; i < N; i++) {
-    m[i] = (float *) malloc(D * sizeof(float));
-  }
-  
-*/
-
-//(x)[cols] =malloc(sizeof(*x) * rows);
-//(y)[cols] = malloc(sizeof(*y) *rows);
-//(m)[cols] = malloc(sizeof(*m) *rows);
 x = (float *) malloc(N*D * sizeof(float));
 y = (float *) malloc(N*D * sizeof(float));
 m = (float *) malloc(N*D * sizeof(float));
@@ -141,7 +118,7 @@ m = (float *) malloc(N*D * sizeof(float));
   cudaMallocPitch(&gp_denom, &gp_pitch, N * sizeof(float), D);
 
 
-  f = fopen("../data/r15_ext120.txt","r");
+  f = fopen("../data/r15.txt","r");
   for (i = 0; i < N; ++i) {
     for (j = 0; j < D; ++j) {
       ret_code = fscanf(f, "%f\t", &x[i*D+j]);
@@ -180,17 +157,37 @@ m = (float *) malloc(N*D * sizeof(float));
 
 __global__ void cuda_mean_shift(int *N,int *D,float *sigma,float *x, float *y, float *y_new,float *m, float *g,float *numer,float *denom,size_t pitch){
 
- //int tid = threadIdx.x;
+ int tids = threadIdx.x;
  //int tid = blockIdx.x;
  int tid = threadIdx.x + blockIdx.x * blockDim.x;
  int j,z;
- float dist=0; 
+ float r;
+ float dist=0;
+ __shared__ float s_y[120*2];
+ __shared__ float s_m[120*2]; 
+__shared__ float s_y_new[120*2];
+__shared__ float s_numer[120*2];   
+__shared__ float s_denom[120*2];
+//extern __shared__ float shared[];
+//float* s_y = (float*)&shared[blockDim.x*(*D)];
+//float* s_m = (float*)&s_y[blockDim.x*(*D)];
+//float* s_y_new = (float*)&s_m[blockDim.x*(*D)];
+//float* s_numer = (float*)&s_y_new[blockDim.x*(*D)];
+//float* s_denom = (float*)&s_numer[blockDim.x*(*D)];
+
+    for(z=0;z<*D;z++){
+      s_y[tids*(*D)+z] = y[tid*(*D)+z];  
+      s_m[tids*(*D)+z] = m[tid*(*D)+z];
+      s_numer[tids*(*D)+z] = 0;
+      s_denom[tids*(*D)+z] = 0;
+    }
+    __syncthreads(); 
     if(tid<*N){
       
       for(j=0;j<*N;j++){
         float *row_g = (float *)((char*)g + j * pitch);
         for(z=0;z<*D;z++){
-          dist += powf((y[tid*(*D)+z]-x[j*(*D)+z]),2.0);
+          dist += powf((s_y[tids*(*D)+z]-x[j*(*D)+z]),2.0);
 
         }
         dist = sqrtf(dist);
@@ -200,35 +197,33 @@ __global__ void cuda_mean_shift(int *N,int *D,float *sigma,float *x, float *y, f
 
         if (tid==j) row_g[tid] += 1;
         dist=0;
-
         for(z=0;z<*D;z++){
-          float *row_numer = (float *)((char*)numer + z * pitch);
-          float *row_denom = (float *)((char*)denom + z * pitch);
-          row_numer[tid] += row_g[tid]*x[j*(*D)+z]; 
-          row_denom[tid] +=row_g[tid];
+          s_numer[tids*(*D)+z] += row_g[tid]*x[j*(*D)+z]; 
+          s_denom[tids*(*D)+z] +=row_g[tid];
         }
+        __syncthreads();
 
       }
 
       for(z=0;z<*D;z++){
-        float *row_y_new = (float *)((char*)y_new + z * pitch);
-        float *row_numer = (float *)((char*)numer + z * pitch);
-        float *row_denom = (float *)((char*)denom + z * pitch);
-        row_y_new[tid] = row_numer[tid]/row_denom[tid];
-        m[tid*(*D)+z] = row_y_new[tid] - y[tid*(*D)+z];
+        s_y_new[tids*(*D)+z] = s_numer[tids*(*D)+z]/s_denom[tids*(*D)+z];
+        s_m[tids*(*D)+z] = s_y_new[tids*(*D)+z] - s_y[tids*(*D)+z];
       }
     
       for(z=0;z<*D;z++){
-        float *row_y_new = (float *)((char*)y_new + z * pitch);
-        float *row_numer = (float *)((char*)numer + z * pitch);
-        float *row_denom = (float *)((char*)denom + z * pitch);
-        y[tid*(*D)+z] = row_y_new[tid];
-        row_numer[tid] = 0;
-        row_denom[tid] = 0;
+        s_y[tids*(*D)+z] = s_y_new[tids*(*D)+z];
+        s_numer[tids*(*D)+z] = 0;
+        s_denom[tids*(*D)+z] = 0;
       }
-
+__syncthreads();
 
     }
+    
+    for(z=0;z<*D;z++){
+      y[tid*(*D)+z] = s_y[tids*(*D)+z];
+      m[tid*(*D)+z] = s_m[tids*(*D)+z];
+    }
+    __syncthreads();
 
 
 }
@@ -240,7 +235,6 @@ __global__ void cuda_mean_shift(int *N,int *D,float *sigma,float *x, float *y, f
 void mean_shift() {
   int iter = 0;
   int i,z;
-  //float dist = 0;
   float er = FLT_MAX;
   float temp = 0;
 
@@ -252,7 +246,7 @@ void mean_shift() {
     iter++;
     er = 0;
     
-    cuda_mean_shift<<<N/nT,nT>>>(gp_N,gp_D,gp_sigma,gp_x,gp_y,gp_y_new,gp_m,gp_g,gp_numer,gp_denom,gp_pitch); 
+    cuda_mean_shift<<<N/nT,nT/*,N*D*10*sizeof(float)*/>>>(gp_N,gp_D,gp_sigma,gp_x,gp_y,gp_y_new,gp_m,gp_g,gp_numer,gp_denom,gp_pitch); 
    cudaMemcpy(m,gp_m,N*D*sizeof(float), cudaMemcpyDeviceToHost); 
    for(i=0;i<N;i++){
      for(z=0;z<D;z++){
