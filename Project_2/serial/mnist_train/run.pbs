@@ -1,0 +1,9 @@
+#!/bin/bash
+#PBS -N knn_serial
+#PBS -q pdlab
+#PBS -j oe
+#PBS -l walltime=1:00:00
+cd $PBS_O_WORKDIR  
+
+./knn_serial
+

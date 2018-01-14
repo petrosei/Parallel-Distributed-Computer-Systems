@@ -8,9 +8,11 @@ pthreads/pthreads_parallel
 omp-hands-on-SC08.pdf
 knn-ring-mpi.pdf
 *.swp
-*.txt
+*Kmatrix*
+*knn_serial
+*knn_mpi
 *.pdf
-data
+
 block_MPI/knn_mpi
 non_block_MPI/knn_mpi
 serial/knn_serial

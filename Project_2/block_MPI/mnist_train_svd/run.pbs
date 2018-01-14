@@ -1,0 +1,14 @@
+#!/bin/bash
+#PBS -N knn_bl_svd_n4p4
+#PBS -q pdlab
+#PBS -j oe
+#PBS -l nodes=4:ppn=4
+cd $PBS_O_WORKDIR  
+pwd 
+date 
+hostname
+export  NP=$(cat  $PBS_NODEFILE  | wc -l) 
+export  I2G_MPI_TYPE=mpich2  
+export  I2G_MPI_APPLICATION=knn_mpi 
+$I2G_MPI_START
+
