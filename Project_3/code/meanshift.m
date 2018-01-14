@@ -85,10 +85,12 @@ function y = meanshift(x, h, varargin)
     % find pairwise distance matrix (inside radius)
     [I, D] = rangesearch( x, y, h^2 );
     W      = rangesearch2sparse( I, D );
-    
     % compute kernel matrix
     W = spfun( @(x) exp( -x / (2*h^2) ), W );
-
+    size(x)
+    size(I)
+    size(D)
+    size(W)
     % make sure diagonal elements are 1
     W = W + spdiags( ones(n,1), 0, n, n );
     
@@ -96,13 +98,11 @@ function y = meanshift(x, h, varargin)
     y_new = W * x;
     
     % normalize vector
-    y_new(:,1) = y_new(:,1) ./ sum( W, 2 );
-    y_new(:,2) = y_new(:,2) ./ sum( W, 2 );
-    
+   y_new = bsxfun( @rdivide, y_new, sum( W, 2 ) );
     % calculate mean-shift vector
     m = y_new - y;
     
-    if opt.display && d == 2
+    if opt.display %&& d == 2
       
       figure(1337)
       clf

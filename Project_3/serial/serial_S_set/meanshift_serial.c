@@ -7,11 +7,12 @@ struct timeval startwtime, endwtime;
 double seq_time;
 
 
-int N; // number of elements
-int D; // dimensions
-int sigma = 1;
+int N = 5000; // number of elements
+int D = 2; // dimensions
+int sigma = 250;
 float MS_error = 0.0001; // mean shift error
-int iter_limit = 12;
+float error = 504820 * 0.001; // mean value of dataset * 10^(-3) 
+int iter_limit = 30;
 
 float **x; // initilal matrix
 float **y; // final matrix
@@ -29,17 +30,7 @@ void test(void);
 int main(int argc, char **argv) {
 
 
-  if (argc != 3) {
-    printf("Usage: %s N data \n D dimension  )\n",
-           argv[0]);
-    exit(1);
-  }
-  
-
-
-  N =  atoi(argv[1]);
-  D =  atoi(argv[2]);
-  
+  MS_error = MS_error*sigma; 
   
   init();
 
@@ -54,7 +45,7 @@ int main(int argc, char **argv) {
   printf("KNN wall clock time = %f\n", seq_time);
   
 
-  //test();
+  test();
 }
 
 
@@ -66,6 +57,9 @@ void init() {
   int ret_code = 0;
   float temp;
   FILE *f;
+
+
+  // Allocate system memmory
 
   x = (float **) malloc(N * sizeof(float*));
   for (i = 0; i < N; i++) {
@@ -107,7 +101,7 @@ void init() {
     denom[i] = (float *) malloc(D * sizeof(float));
   }
 
-  f = fopen("../data/r15_ext120.txt","r");
+  f = fopen("../../data/S_set/S_set_5000x2.txt","r");
   for (i = 0; i < N; ++i) {
     for (j = 0; j < D; ++j) {
       ret_code = fscanf(f, "%f\t", &x[i][j]);
@@ -140,9 +134,10 @@ void mean_shift() {
   int i,j,z;
   float dist = 0;
   float er = FLT_MAX;
+  float last_er = FLT_MAX;
   float temp;
-  while(er > MS_error && iter<iter_limit) {
-     
+  while(er > MS_error && iter<iter_limit && last_er>=er) {
+    last_er = er;
     iter++;
     er = 0;
     for(i=0;i<N;i++){
@@ -192,7 +187,6 @@ void mean_shift() {
  
     er = sqrt(er);
 
-   //printf("%lf,,,,,,%lf\n",y_new[1][1],y[1][1]); 
 
     printf("Iteration = %d, Error = %f\n",iter,er);
 
@@ -210,10 +204,9 @@ void test() {
     int i,j;
     int pass = 1;
     int ret_code = 0;
-    int count = 0;
-    float error = 0.0001; 
+    int count = 0; 
     FILE *f;
-    f = fopen("../data/validation_r15.txt","r");
+    f = fopen("../../data/S_set/validation_S_set_5000x2.txt","r");
     for (i = 0; i < N; ++i) {
       for (j = 0; j < D; ++j) {
         ret_code = fscanf(f, "%f\t", &val_y[i][j]);
@@ -221,7 +214,6 @@ void test() {
         ret_code = fscanf(f,"\n");
     }
     fclose(f);
-    printf("%f\n",fabs(val_y[1][1]-y[1][1]));
     
    f = fopen("yout.txt","w+");
    for (i = 0; i < N; i++) {
@@ -237,7 +229,6 @@ void test() {
     for (i = 0; i < N; ++i) {
       for (j = 0; j < D; ++j) {
 
-	//pass &= (abs(val_y[i][j] - y[i][j]) <= error);
         
 	if(fabs(val_y[i][j] - y[i][j]) > error){
 	  count++;
@@ -246,7 +237,7 @@ void test() {
       }
     }
     printf(" TEST %s\n",(pass) ? "PASSed" : "FAILed");
-    printf("%d\n",count);
+    printf(" Errors = %d\n",count);
 
 
 

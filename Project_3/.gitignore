@@ -1,11 +1,15 @@
 
 Results
 *.swp
-*.txt
+code/*.txt
+*yout.txt
+*meanshift_serial
+*meanshift_cuda
+*meanshift_cuda_shared
 *.pdf
 *.mat
 *.m~
-data
+
 
 serial/meanshift_serial
 

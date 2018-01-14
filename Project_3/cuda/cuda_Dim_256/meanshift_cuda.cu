@@ -7,12 +7,13 @@ struct timeval startwtime, endwtime;
 double seq_time;
 
 // CPU variable
-int N; // number of elements
-int D; // dimensions
-int nT = 120; // number of threads per block
-float sigma = 1.0;
+int N = 256; // number of elements
+int D = 64; // dimensions
+int nT = 32; // number of threads per block
+float sigma = 10.0;
 float MS_error = 0.0001; // mean shift error
-int iter_limit = 12;
+float error = 127 * 0.1; // mean value of dataset * 10^(-3)
+int iter_limit = 4;
 size_t cols;
 size_t rows;
 
@@ -49,18 +50,8 @@ void free_arrays(void);
 
 int main(int argc, char **argv) {
 
+  MS_error = MS_error*sigma;
 
-  if (argc != 3) {
-    printf("Usage: %s N data \n D dimension  )\n",
-           argv[0]);
-    exit(1);
-  }
-  
-
-
-  N =  atoi(argv[1]);
-  D =  atoi(argv[2]);
-  
   init();
 
   gettimeofday (&startwtime, NULL);
@@ -91,9 +82,11 @@ void init() {
   
   FILE *f;
 
-x = (float *) malloc(N*D * sizeof(float));
-y = (float *) malloc(N*D * sizeof(float));
-m = (float *) malloc(N*D * sizeof(float));
+  // Allocate system memmory
+
+  x = (float *) malloc(N*D * sizeof(float));
+  y = (float *) malloc(N*D * sizeof(float));
+  m = (float *) malloc(N*D * sizeof(float));
 
 
   val_y = (float **) malloc(N * sizeof(float*));
@@ -118,7 +111,7 @@ m = (float *) malloc(N*D * sizeof(float));
   cudaMallocPitch(&gp_denom, &gp_pitch, N * sizeof(float), D);
 
 
-  f = fopen("../data/r15.txt","r");
+  f = fopen("../../data/Dim/Dim_256x64.txt","r");
   for (i = 0; i < N; ++i) {
     for (j = 0; j < D; ++j) {
       ret_code = fscanf(f, "%f\t", &x[i*D+j]);
@@ -157,37 +150,15 @@ m = (float *) malloc(N*D * sizeof(float));
 
 __global__ void cuda_mean_shift(int *N,int *D,float *sigma,float *x, float *y, float *y_new,float *m, float *g,float *numer,float *denom,size_t pitch){
 
- int tids = threadIdx.x;
- //int tid = blockIdx.x;
  int tid = threadIdx.x + blockIdx.x * blockDim.x;
  int j,z;
- float r;
- float dist=0;
- __shared__ float s_y[120*2];
- __shared__ float s_m[120*2]; 
-__shared__ float s_y_new[120*2];
-__shared__ float s_numer[120*2];   
-__shared__ float s_denom[120*2];
-//extern __shared__ float shared[];
-//float* s_y = (float*)&shared[blockDim.x*(*D)];
-//float* s_m = (float*)&s_y[blockDim.x*(*D)];
-//float* s_y_new = (float*)&s_m[blockDim.x*(*D)];
-//float* s_numer = (float*)&s_y_new[blockDim.x*(*D)];
-//float* s_denom = (float*)&s_numer[blockDim.x*(*D)];
-
-    for(z=0;z<*D;z++){
-      s_y[tids*(*D)+z] = y[tid*(*D)+z];  
-      s_m[tids*(*D)+z] = m[tid*(*D)+z];
-      s_numer[tids*(*D)+z] = 0;
-      s_denom[tids*(*D)+z] = 0;
-    }
-    __syncthreads(); 
+ float dist=0; 
     if(tid<*N){
       
       for(j=0;j<*N;j++){
         float *row_g = (float *)((char*)g + j * pitch);
         for(z=0;z<*D;z++){
-          dist += powf((s_y[tids*(*D)+z]-x[j*(*D)+z]),2.0);
+          dist += powf((y[tid*(*D)+z]-x[j*(*D)+z]),2.0);
 
         }
         dist = sqrtf(dist);
@@ -197,33 +168,35 @@ __shared__ float s_denom[120*2];
 
         if (tid==j) row_g[tid] += 1;
         dist=0;
+
         for(z=0;z<*D;z++){
-          s_numer[tids*(*D)+z] += row_g[tid]*x[j*(*D)+z]; 
-          s_denom[tids*(*D)+z] +=row_g[tid];
+          float *row_numer = (float *)((char*)numer + z * pitch);
+          float *row_denom = (float *)((char*)denom + z * pitch);
+          row_numer[tid] += row_g[tid]*x[j*(*D)+z]; 
+          row_denom[tid] +=row_g[tid];
         }
-        __syncthreads();
 
       }
 
       for(z=0;z<*D;z++){
-        s_y_new[tids*(*D)+z] = s_numer[tids*(*D)+z]/s_denom[tids*(*D)+z];
-        s_m[tids*(*D)+z] = s_y_new[tids*(*D)+z] - s_y[tids*(*D)+z];
+        float *row_y_new = (float *)((char*)y_new + z * pitch);
+        float *row_numer = (float *)((char*)numer + z * pitch);
+        float *row_denom = (float *)((char*)denom + z * pitch);
+        row_y_new[tid] = row_numer[tid]/row_denom[tid];
+        m[tid*(*D)+z] = row_y_new[tid] - y[tid*(*D)+z];
       }
     
       for(z=0;z<*D;z++){
-        s_y[tids*(*D)+z] = s_y_new[tids*(*D)+z];
-        s_numer[tids*(*D)+z] = 0;
-        s_denom[tids*(*D)+z] = 0;
+        float *row_y_new = (float *)((char*)y_new + z * pitch);
+        float *row_numer = (float *)((char*)numer + z * pitch);
+        float *row_denom = (float *)((char*)denom + z * pitch);
+        y[tid*(*D)+z] = row_y_new[tid];
+        row_numer[tid] = 0;
+        row_denom[tid] = 0;
       }
-__syncthreads();
+
 
     }
-    
-    for(z=0;z<*D;z++){
-      y[tid*(*D)+z] = s_y[tids*(*D)+z];
-      m[tid*(*D)+z] = s_m[tids*(*D)+z];
-    }
-    __syncthreads();
 
 
 }
@@ -236,17 +209,19 @@ void mean_shift() {
   int iter = 0;
   int i,z;
   float er = FLT_MAX;
+  float last_er =FLT_MAX;
   float temp = 0;
 
 
   
 
-  while(er > MS_error && iter<iter_limit) {
-     
+  while(er > MS_error && iter<iter_limit && last_er >= er) {
+    
+    last_er = er;
     iter++;
     er = 0;
     
-    cuda_mean_shift<<<N/nT,nT/*,N*D*10*sizeof(float)*/>>>(gp_N,gp_D,gp_sigma,gp_x,gp_y,gp_y_new,gp_m,gp_g,gp_numer,gp_denom,gp_pitch); 
+    cuda_mean_shift<<<N/nT,nT>>>(gp_N,gp_D,gp_sigma,gp_x,gp_y,gp_y_new,gp_m,gp_g,gp_numer,gp_denom,gp_pitch); 
    cudaMemcpy(m,gp_m,N*D*sizeof(float), cudaMemcpyDeviceToHost); 
    for(i=0;i<N;i++){
      for(z=0;z<D;z++){
@@ -258,7 +233,6 @@ void mean_shift() {
    
    er = sqrt(er);
 
-   //printf("%lf,,,,,,%lf\n",y_new[1][1],y[1][1]); 
 
     printf("Iteration = %d, Error = %lf\n",iter,er);
 
@@ -278,10 +252,9 @@ void test() {
     int pass = 1;
     int ret_code = 0;
     int count = 0;
-    float error = 0.0001; 
     FILE *f;
 
-    f = fopen("../data/validation_r15.txt","r");
+    f = fopen("../../data/Dim/Dim_256x64.txt","r");
     for (i = 0; i < N; ++i) {
       for (j = 0; j < D; ++j) {
         ret_code = fscanf(f, "%f\t", &val_y[i][j]);
@@ -289,7 +262,6 @@ void test() {
         ret_code = fscanf(f,"\n");
     }
     fclose(f);
-    //printf("%f\n",fabs(val_y[1][1]-y[1][1]));
     
    f = fopen("yout.txt","w+");
    for (i = 0; i < N; i++) {
@@ -305,7 +277,6 @@ void test() {
     for (i = 0; i < N; ++i) {
       for (j = 0; j < D; ++j) {
 
-	//pass &= (abs(val_y[i][j] - y[i][j]) <= error);
         
 	if(fabs(val_y[i][j] - y[i*D+j]) > error){
 	  count++;
@@ -314,7 +285,7 @@ void test() {
       }
     }
     printf(" TEST %s\n",(pass) ? "PASSed" : "FAILed");
-    printf("%d\n",count);
+    printf(" Errors = %d\n",count);
 
 
 
