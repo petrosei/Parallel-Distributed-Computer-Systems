@@ -87,10 +87,7 @@ function y = meanshift(x, h, varargin)
     W      = rangesearch2sparse( I, D );
     % compute kernel matrix
     W = spfun( @(x) exp( -x / (2*h^2) ), W );
-    size(x)
-    size(I)
-    size(D)
-    size(W)
+    
     % make sure diagonal elements are 1
     W = W + spdiags( ones(n,1), 0, n, n );
     
