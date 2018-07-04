@@ -11,6 +11,8 @@ Gause-Seidel
 #include <stdlib.h>
 #include <sys/time.h>
 #include <math.h>
+#include <string.h>
+
 
 struct timeval startwtime, endwtime;
 double seq_time;
@@ -32,7 +34,7 @@ float *x; // pagerank value
 float *xold; // old pagerank
 int *out_link;
 
-
+char Dset[20];
 
 
 
@@ -49,7 +51,12 @@ void init(){
   char  list_file[1000];
   char  matrix_file[1000];
 
-  char path[20] = "../_basketball";
+  char path[40];
+
+
+  bzero(path,40);
+  strcpy(path,"../Datasets/");
+  strcat(path,Dset);
 
   c = 0.85;
   maxiter = 500;
@@ -274,14 +281,16 @@ void pageRank(){
 /** the main program **/ 
 int main(int argc, char **argv) {
 
-//  if (argc != 2) {
-//    printf("Usage: %s q\n  where n=2^q is problem size (power of two)\n", 
-//	   argv[0]);
-//    exit(1);
-//  }
+  if (argc != 2) {
+    printf("Usage: Dset: name of  Dataset (it needs to be placed in Datasets folder)");
+    exit(1);
+  }
 
-//  N = 1<<atoi(argv[1]);
-//  a = (int *) malloc(N * sizeof(int));
+  bzero(Dset,20);
+  strcpy(Dset,argv[1]);
+
+
+
   int i;
   init();  
 

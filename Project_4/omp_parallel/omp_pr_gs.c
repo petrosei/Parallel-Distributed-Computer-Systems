@@ -11,6 +11,7 @@ Gause-Seidel
 #include <stdlib.h>
 #include <sys/time.h>
 #include <math.h>
+#include <string.h>
 #include <omp.h>
 
 struct timeval startwtime, endwtime;
@@ -23,6 +24,8 @@ int N;
 float v;
 float b;
 int maxiter;
+int NT; //Number of threads
+
 //Global Arrays
 
 //float *v; //the personalization vector of length N
@@ -33,6 +36,7 @@ float *x; // pagerank value
 float *xold; // old pagerank
 int *out_link;
 
+char Dset[20];
 
 
 
@@ -50,7 +54,12 @@ void init(){
   char  list_file[1000];
   char  matrix_file[1000];
 
-  char path[20] = "../_basketball";
+  char path[40];
+
+
+  bzero(path,40);
+  strcpy(path,"../Datasets/");
+  strcat(path,Dset);
 
   c = 0.85;
   maxiter = 500;
@@ -224,8 +233,8 @@ void gauseSeidel(){
   int i, j;
   float xnew;
   
-  int chunk =N/4;
-  #pragma omp parallel num_threads(4) shared(P,x,chunk)  private(i,j,xnew)
+  int chunk =N/NT;
+  #pragma omp parallel num_threads(NT) shared(P,x,chunk)  private(i,j,xnew)
   {
     #pragma omp for schedule(dynamic,chunk) 
   for (i=0;i<N;i++){
@@ -282,14 +291,16 @@ void pageRank(){
 /** the main program **/ 
 int main(int argc, char **argv) {
 
-//  if (argc != 2) {
-//    printf("Usage: %s q\n  where n=2^q is problem size (power of two)\n", 
-//	   argv[0]);
-//    exit(1);
-//  }
+  if (argc != 3) {
+    printf("Usage: \n 1. Dset: name of  Dataset (it needs to be placed in Datasets folder)\n 2. NT: Number of threads");
+    exit(1);
+  }
 
-//  N = 1<<atoi(argv[1]);
-//  a = (int *) malloc(N * sizeof(int));
+  NT = atoi(argv[2]);
+
+  bzero(Dset,20);
+  strcpy(Dset,argv[1]);
+
   int i;
   init();  
 
